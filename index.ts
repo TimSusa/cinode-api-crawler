@@ -139,6 +139,6 @@ async function getStats() {
   console.table(users);
 }
 
-//await fetchEmployeeDetails();
+await fetchEmployeeDetails();
 await readEmployeeData();
 await getStats();
