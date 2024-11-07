@@ -1,4 +1,4 @@
-import { getConfig } from "../config.ts";
+import { getConfig } from "./config.ts";
 import { Logger } from "./logger.ts";
 import * as base64url from "https://deno.land/std@0.217.0/encoding/base64url.ts";
 

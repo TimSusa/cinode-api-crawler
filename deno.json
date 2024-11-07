@@ -1,5 +1,9 @@
 {
   "tasks": {
-    "start": "deno run --allow-read --allow-write index.ts"
+    "start": "deno run --allow-read --allow-write --allow-env --allow-net --unstable-kv index.ts"
+  },
+  "imports": {
+    "@cliffy/": "https://deno.land/x/cliffy@v0.25.7/",
+    "@std/": "https://deno.land/std@0.218.0/"
   }
 }
