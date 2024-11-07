@@ -79,11 +79,24 @@ if (import.meta.main) {
 async function setupEnv() {
   console.log("No .env file found. Let's create one!");
 
-  const useDefault = await Confirm.prompt("Use dummy values?");
+  const useDefault = await Confirm.prompt(
+    "Use dummy values? Otherwise you will be prompted for giving your values in"
+  );
+
+  const defaultEnv = {
+    CINODE_TOKEN_ENDPOINT: "https://api.cinode.com/token",
+    CINODE_API_ENDPOINT: "https://api.cinode.com/v0.1",
+  };
 
   if (useDefault) {
-    const dummyEnv = `USERNAME=dummy\nPASSWORD=dummy123`;
-    await Deno.writeTextFile(".env", dummyEnv);
+    const envContent = `
+CINODE_APP_ID=dummy
+CINODE_APP_SECRET=dummy123
+CINODE_COMPANY_ID=dummy456
+CINODE_TOKEN_ENDPOINT=${defaultEnv.CINODE_TOKEN_ENDPOINT}
+CINODE_API_ENDPOINT=${defaultEnv.CINODE_API_ENDPOINT}
+`.trim();
+    await Deno.writeTextFile(".env", envContent);
     console.log("Created .env with dummy values");
     return;
   }
@@ -93,7 +106,35 @@ async function setupEnv() {
     message: "Enter password",
   });
 
-  const envContent = `USERNAME=${username}\nPASSWORD=${password}`;
+  const usernameEnv = `USERNAME=${username}\nPASSWORD=${password}`;
+
+  // Prompt for required values
+  const appId = await Input.prompt({
+    message: "Enter CINODE_APP_ID",
+    minLength: 1,
+  });
+
+  const appSecret = await Input.prompt({
+    message: "Enter CINODE_APP_SECRET",
+    minLength: 1,
+  });
+
+  const companyId = await Input.prompt({
+    message: "Enter CINODE_COMPANY_ID",
+    minLength: 1,
+  });
+
+  const env = {
+    ...defaultEnv,
+    CINODE_APP_ID: appId,
+    CINODE_APP_SECRET: appSecret,
+    CINODE_COMPANY_ID: companyId,
+  };
+
+  const envContent = Object.entries(env)
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
+
   await Deno.writeTextFile(".env", envContent);
   console.log("Created .env file successfully");
 }
