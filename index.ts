@@ -95,6 +95,8 @@ CINODE_APP_SECRET=dummy123
 CINODE_COMPANY_ID=dummy456
 CINODE_TOKEN_ENDPOINT=${defaultEnv.CINODE_TOKEN_ENDPOINT}
 CINODE_API_ENDPOINT=${defaultEnv.CINODE_API_ENDPOINT}
+USERNAME=dummy
+PASSWORD=dummy123
 `.trim();
     await Deno.writeTextFile(".env", envContent);
     console.log("Created .env with dummy values");
@@ -105,8 +107,6 @@ CINODE_API_ENDPOINT=${defaultEnv.CINODE_API_ENDPOINT}
   const password = await Input.prompt({
     message: "Enter password",
   });
-
-  const usernameEnv = `USERNAME=${username}\nPASSWORD=${password}`;
 
   // Prompt for required values
   const appId = await Input.prompt({
@@ -126,6 +126,8 @@ CINODE_API_ENDPOINT=${defaultEnv.CINODE_API_ENDPOINT}
 
   const env = {
     ...defaultEnv,
+    USERNAME: username,
+    PASSWORD: password,
     CINODE_APP_ID: appId,
     CINODE_APP_SECRET: appSecret,
     CINODE_COMPANY_ID: companyId,
