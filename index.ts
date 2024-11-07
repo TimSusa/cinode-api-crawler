@@ -1,5 +1,5 @@
-import { exists } from "@std/fs/exists.ts";
-import { parse } from "@std/dotenv/mod.ts";
+import { exists } from "std/fs/exists.ts";
+import { parse } from "std/dotenv/mod.ts";
 import { Input } from "@cliffy/prompt/mod.ts";
 import { Select } from "@cliffy/prompt/select.ts";
 import { Confirm } from "@cliffy/prompt/confirm.ts";
@@ -8,6 +8,7 @@ import {
   readEmployeeData,
   getStats,
 } from "./client/index.ts";
+import { downloadResumePdf } from "./client/pdf.ts";
 
 async function main() {
   // Check for .env file
@@ -31,6 +32,7 @@ async function main() {
         { name: "Update Database", value: "update" },
         { name: "Read Employee Data", value: "read" },
         { name: "Show Statistics", value: "stats" },
+        { name: "Download Resume PDF", value: "pdf" },
         { name: "Exit", value: "exit" },
       ],
     });
@@ -63,6 +65,36 @@ async function main() {
           ).toFixed(2)}`
         );
         console.table(stats.users);
+        break;
+      }
+
+      case "pdf": {
+        const stats = await getStats();
+        let failedDownloads = 0;
+
+        for (const user of stats.users) {
+          const result = await downloadResumePdf({
+            username: user.name,
+            resumeId: user.resumeId.toString(),
+          });
+
+          if (result.success) {
+            console.log(`✅ Downloaded resume for ${user.name}`);
+          } else {
+            console.error(
+              `❌ Failed to download resume for ${user.name}: ${result.error}`
+            );
+            failedDownloads++;
+          }
+
+          await new Promise((resolve) => setTimeout(resolve, 3000)); // Wait 3 seconds
+        }
+
+        if (failedDownloads > 0) {
+          console.warn(`⚠️ Failed to download ${failedDownloads} resume(s)`);
+        } else {
+          console.log("✨ All resumes downloaded successfully!");
+        }
         break;
       }
 
