@@ -287,7 +287,7 @@ async function exportCandidatesToExcel() {
     pipelineId: candidate.pipelineId,
     pipelineStageId: candidate.pipelineStageId,
     rating: candidate.rating,
-    recruitmentManagerId: candidate.recruitmentManagerId,
+    recruitmentManager: JSON.stringify(candidate.recruitmentManager),
     salaryRequirement: candidate.salaryRequirement,
     seoId: candidate.seoId,
     state: candidate.state,

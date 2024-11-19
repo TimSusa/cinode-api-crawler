@@ -106,7 +106,7 @@ export type CinodeCandidateDetails = {
   pipelineId?: string | number;
   pipelineStageId?: string | number;
   rating?: number;
-  recruitmentManagerId?: string | number;
+  recruitmentManager?: string;
   salaryRequirement?: number;
   state?: string;
   title?: string;

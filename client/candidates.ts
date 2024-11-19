@@ -2,7 +2,6 @@ import type {
   CinodeCandidate,
   CinodeCandidateDetails,
   CinodeEvent,
-  Attachment,
 } from "./types.ts";
 import { Logger } from "./logger.ts";
 import { getConfig } from "./config.ts";
@@ -75,7 +74,12 @@ export async function getCandidatesWithDetails(): Promise<
       const details = await getCandidateDetails(Number(candidate.id));
 
       if (details) {
-        console.log("new candidate found", index++);
+        console.log(
+          "new candidate: ",
+          index++,
+          details.firstName,
+          details.lastName
+        );
         const candidateDetail: CinodeCandidateDetails = {
           ...details,
           firstName: details.firstName,
@@ -85,9 +89,6 @@ export async function getCandidatesWithDetails(): Promise<
 
           seoId: details.seoId,
           companyUserType: details.companyUserType,
-          attachments: JSON.stringify(
-            details.attachments?.map((a: Attachment) => a.fileName) || []
-          ),
         };
 
         const events = await getCandidateEvents(Number(details.id));
