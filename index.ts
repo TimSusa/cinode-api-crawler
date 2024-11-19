@@ -33,7 +33,7 @@ async function main() {
   }
 
   // Check if database exists
-  const hasDatabase = await exists("./db");
+  const hasDatabase = await exists("./data/employees.json");
 
   while (true) {
     const action = await Select.prompt({
@@ -156,7 +156,8 @@ async function main() {
       }
 
       case "detailedCandidates": {
-        const detailedCandidates = await getCandidatesWithDetails();
+        const detailedCandidates: CinodeCandidateDetails[] =
+          await getCandidatesWithDetails();
         await writeCandidatesToDb(detailedCandidates);
         exportCandidatesToExcel(detailedCandidates);
         break;
@@ -252,9 +253,7 @@ async function readOutCandidatesFromDb() {
   return candidates;
 }
 
-async function exportCandidatesToExcel() {
-  const candidates = await readCandidatesFromDb();
-
+function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
   if (candidates.length === 0) {
     console.error("No candidates found");
     return;

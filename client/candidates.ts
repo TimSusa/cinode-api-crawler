@@ -52,8 +52,9 @@ export async function getCandidateDetails(
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-
     const data = await response.json();
+    console.log("candidate details", data);
+
     return data;
   } catch (error) {
     logError("Error getting candidate details ", error);

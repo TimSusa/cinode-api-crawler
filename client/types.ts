@@ -6,7 +6,7 @@ export type CinodeUser = {
 
 export type CinodeCompanyUser = {
   companyUserId: number;
-  firstname: string;
+  firstName: string;
   lastName: string;
 };
 

@@ -154,9 +154,9 @@ export async function getUsersWithResumeId(): Promise<CinodeUser[]> {
           (user: CinodeCompanyUser) => user.companyUserId === companyUserId
         );
         if (companyUser) {
-          const { firstname, lastName } = companyUser;
+          const { firstName, lastName } = companyUser;
           return {
-            name: `${firstname} ${lastName}`,
+            name: `${firstName} ${lastName}`,
             resumeId: id,
             userId: companyUserId,
           };
