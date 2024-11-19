@@ -13,11 +13,12 @@ import {
   getStats,
 } from "@/client/index.ts";
 import {
-  getCompanyCandidates,
+  //getCompanyCandidates,
   getCandidatesWithDetails,
 } from "@/client/candidates.ts";
 import { writeCandidatesToDb, readCandidatesFromDb } from "@/client/db.ts";
 import { downloadResumePdf } from "@/client/pdf.ts";
+import * as XLSX from "npm:xlsx";
 
 async function main() {
   // Check for .env file
@@ -42,13 +43,14 @@ async function main() {
         { name: "Read Employee Data", value: "read" },
         { name: "Show Statistics", value: "stats" },
         { name: "Download Resume PDF", value: "pdf" },
-        { name: "Update Candidates Database", value: "updateCandidate" },
+        // { name: "Update Candidates Database", value: "updateCandidate" },
         { name: "Read Candidates Database", value: "readCandidates" },
         { name: "Show Company Candidates", value: "candidates" },
         {
           name: "Show Detailed Company Candidates",
           value: "detailedCandidates",
         },
+        { name: "Export Candidates to Excel", value: "exportExcel" },
         { name: "Exit", value: "exit" },
       ],
     });
@@ -66,32 +68,32 @@ async function main() {
         console.log("Database updated successfully");
         break;
 
-      case "updateCandidate": {
-        console.log("Updating candidates database...");
-        const candidates = await Promise.resolve(getCompanyCandidates());
-        const candidateUpdates = candidates.map((candidate) => ({
-          id: candidate.id,
-          updates: {
-            // Map relevant fields from CinodeCandidate to CinodeCandidateDetails
-            // Omitting id since it's provided separately
-            ...candidate,
-          },
-        }));
-        const cinodeCandidates: CinodeCandidate[] = candidateUpdates.map(
-          (update) => ({
-            id: update.id,
-            firstname: update.updates.firstname,
-            lastName: update.updates.lastName,
-            companyId: update.updates.companyId,
-            seoId: update.updates.seoId,
-            companyUserType: update.updates.companyUserType,
-            links: update.updates.links,
-          })
-        );
-        await writeCandidatesToDb(cinodeCandidates);
-        console.log("Candidates database updated successfully");
-        break;
-      }
+      // case "updateCandidate": {
+      //   console.log("Updating candidates database...");
+      //   const candidates = await Promise.resolve(getCompanyCandidates());
+      //   const candidateUpdates = candidates.map((candidate) => ({
+      //     id: candidate.id,
+      //     updates: {
+      //       // Map relevant fields from CinodeCandidate to CinodeCandidateDetails
+      //       // Omitting id since it's provided separately
+      //       ...candidate,
+      //     },
+      //   }));
+      //   const cinodeCandidates: CinodeCandidate[] = candidateUpdates.map(
+      //     (update) => ({
+      //       id: update.id,
+      //       firstName: update.updates.firstname,
+      //       lastName: update.updates.lastName,
+      //       companyId: update.updates.companyId,
+      //       seoId: update.updates.seoId,
+      //       companyUserType: update.updates.companyUserType,
+      //       links: update.updates.links,
+      //     })
+      //   );
+      //   await writeCandidatesToDb(cinodeCandidates);
+      //   console.log("Candidates database updated successfully");
+      //   break;
+      // }
 
       case "readCandidates": {
         console.log("Reading candidates from database...");
@@ -155,22 +157,16 @@ async function main() {
 
       case "detailedCandidates": {
         const detailedCandidates = await getCandidatesWithDetails();
-        // Format and print each candidate's details
-        detailedCandidates.forEach((candidate: CinodeCandidateDetails) => {
-          console.log(`Candidate ID: ${candidate.id}`);
-          console.log(`Name: ${candidate.firstname} ${candidate.lastName}`);
-          console.log(`Company ID: ${candidate.companyId}`);
-          console.log(`SEO ID: ${candidate.seoId}`);
-          console.log(`Company User Type: ${candidate.companyUserType}`);
-          console.log(`Links:`);
-          candidate.links.forEach((link) => {
-            console.log(`  - Href: ${link.href}`);
-            console.log(`    Rel: ${link.rel}`);
-            console.log(`    Methods: ${link.methods.join(", ")}`);
-          });
+        await writeCandidatesToDb(detailedCandidates);
+        exportCandidatesToExcel(detailedCandidates);
+        break;
+      }
 
-          console.log("-----------------------------");
-        });
+      case "exportExcel": {
+        const candidates = await readCandidatesFromDb();
+
+        exportCandidatesToExcel(candidates);
+        console.log("✨ Excel file created successfully!");
         break;
       }
 
@@ -250,8 +246,63 @@ PASSWORD=dummy123
 }
 
 async function readOutCandidatesFromDb() {
-  // Implementation here
-  // Example:
+  console.log("Reading candidates from database...");
   const candidates = await readCandidatesFromDb();
   console.table(candidates);
+  return candidates;
+}
+
+async function exportCandidatesToExcel() {
+  const candidates = await readCandidatesFromDb();
+
+  if (candidates.length === 0) {
+    console.error("No candidates found");
+    return;
+  }
+
+  const formattedCandidates = candidates.map((candidate) => ({
+    firstName: candidate.firstName,
+    lastName: candidate.lastName,
+    email: candidate.email,
+    phone: candidate.phone,
+    title: candidate.title,
+    availableFromDate: candidate.availableFromDate,
+    birthYear: candidate.birthYear,
+    campaignCode: candidate.campaignCode,
+    companyId: candidate.companyId,
+    createdDateTime: candidate.createdDateTime,
+    currencyId: candidate.currencyId,
+    currentEmployer: candidate.currentEmployer,
+    description: candidate.description,
+    events:
+      candidate.events?.map((event) => JSON.stringify(event)).join(" | ") || "",
+    gender: candidate.gender,
+    id: candidate.id,
+    internalId: candidate.internalId,
+    isMobile: candidate.isMobile,
+    lastTouchDateTime: candidate.lastTouchDateTime,
+    linkedInUrl: candidate.linkedInUrl,
+    offeredSalary: candidate.offeredSalary,
+    periodOfNoticeDays: candidate.periodOfNoticeDays,
+    pipelineId: candidate.pipelineId,
+    pipelineStageId: candidate.pipelineStageId,
+    rating: candidate.rating,
+    recruitmentManagerId: candidate.recruitmentManagerId,
+    salaryRequirement: candidate.salaryRequirement,
+    seoId: candidate.seoId,
+    state: candidate.state,
+    updatedDateTime: candidate.updatedDateTime,
+  }));
+
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.json_to_sheet(formattedCandidates);
+
+  // Adjust column width for events
+  const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
+  const eventsColIndex = Object.keys(formattedCandidates[0]).indexOf("events");
+  worksheet["!cols"] = Array(range.e.c + 1).fill({ wch: 15 });
+  worksheet["!cols"][eventsColIndex] = { wch: 100 }; // wider column for events
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Candidates");
+  XLSX.writeFile(workbook, "candidates.xlsx");
 }

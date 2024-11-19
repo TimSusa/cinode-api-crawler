@@ -67,35 +67,55 @@ export type UserResumeEntry = {
 export type CinodeCandidate = {
   id: number;
   firstname: string;
-  lastName: string;
+  lastname: string;
   companyId: string;
   seoId: string;
   companyUserType: string;
-  links: Array<{ href: string; rel: string; methods: string[] }>;
+  //links: Array<{ href: string; rel: string; methods: string[] }>;
+};
+
+export type Attachment = {
+  fileName: string;
 };
 
 export type CinodeCandidateDetails = {
   id: string | number;
-  firstname: string;
+  firstName: string;
   lastName: string;
   companyId: string | number;
   seoId: string | number;
   companyUserType: string;
-  candidate: CinodeCandidate;
   email?: string;
   phone?: string;
-  status?: string;
-  raw: unknown;
+  attachments?: Attachment[];
+  availableFromDate?: string;
+  birthYear?: number;
+  campaignCode?: string;
+  currencyId?: string | number;
+  currentEmployer?: string;
+  createdDateTime?: string;
+  description?: string;
   events?: CinodeEvent[];
-  details?: CinodeCandidateDetails;
-  links: Array<{
-    href: string;
-    rel: string;
-    methods: string[];
-  }>;
+  gender?: string;
+  internalId?: string | number;
+  isMobile?: boolean;
+  lastTouchDateTime?: string;
+  linkedInUrl?: string;
+  offeredSalary?: number;
+  periodOfNoticeDays?: number;
+  pipelineId?: string | number;
+  pipelineStageId?: string | number;
+  rating?: number;
+  recruitmentManagerId?: string | number;
+  salaryRequirement?: number;
+  state?: string;
+  title?: string;
+  updatedDateTime?: string;
 };
 
 export type CinodeEvent = {
+  type?: string;
+  createdDateTime?: string;
   companyCandidateId: number;
   id: number;
   companyId: number;

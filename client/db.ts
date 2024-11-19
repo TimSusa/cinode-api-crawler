@@ -1,4 +1,8 @@
-import type { CinodeCandidate, EmployeeDetail } from "./types.ts";
+import type {
+  CinodeCandidate,
+  CinodeCandidateDetails,
+  EmployeeDetail,
+} from "./types.ts";
 
 const DB_PATH = {
   candidates: "./data/candidates.json",
@@ -36,7 +40,7 @@ function _readJsonFile<T>(path: string): T {
   try {
     const content = Deno.readTextFileSync(path);
     const data = JSON.parse(content) as T;
-    return normalizeData(data);
+    return data;
   } catch {
     return {} as T;
   }
@@ -128,11 +132,12 @@ export function readEmployeesFromDb(): EmployeeDetail[] {
   }
 }
 
-export function readCandidatesFromDb(): CinodeCandidate[] {
+export function readCandidatesFromDb(): CinodeCandidateDetails[] {
   try {
-    const data = _readJsonFile<{ candidates: CinodeCandidate[] }>(
+    const data = _readJsonFile<{ candidates: CinodeCandidateDetails[] }>(
       DB_PATH.candidates
     );
+    console.log("Reading candidates from database...", data.candidates);
     return data.candidates || [];
   } catch (error) {
     console.error("Failed to read candidates:", error);
@@ -140,7 +145,9 @@ export function readCandidatesFromDb(): CinodeCandidate[] {
   }
 }
 
-export function writeCandidatesToDb(candidates: CinodeCandidate[]): void {
+export function writeCandidatesToDb(
+  candidates: CinodeCandidateDetails[]
+): void {
   try {
     console.log("writeCandidateToDb:", candidates);
     Deno.writeTextFileSync(

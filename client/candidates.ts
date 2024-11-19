@@ -2,11 +2,11 @@ import type {
   CinodeCandidate,
   CinodeCandidateDetails,
   CinodeEvent,
+  Attachment,
 } from "./types.ts";
 import { Logger } from "./logger.ts";
 import { getConfig } from "./config.ts";
 import { getHeaders } from "./auth.ts";
-import { writeCandidatesToDb } from "./db.ts";
 const logger = new Logger("Cinode Candidates");
 const API_DELAY_MS = parseInt(Deno.env.get("API_DELAY_MS") || "1000");
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -39,7 +39,7 @@ export async function getCompanyCandidates(): Promise<CinodeCandidate[]> {
 
 export async function getCandidateDetails(
   candidateId: number
-): Promise<CinodeCandidate | null> {
+): Promise<CinodeCandidateDetails | null> {
   try {
     const config = await getConfig();
     const headers = await getHeaders();
@@ -68,22 +68,26 @@ export async function getCandidatesWithDetails(): Promise<
   try {
     const candidates: CinodeCandidate[] = await getCompanyCandidates();
     const candidateDetails = [];
-    const normalizedCandidates = [];
+    let index = 0;
 
     for (const candidate of candidates) {
       await delay(API_DELAY_MS);
       const details = await getCandidateDetails(Number(candidate.id));
+
       if (details) {
+        console.log("new candidate found", index++);
         const candidateDetail: CinodeCandidateDetails = {
-          id: details.id,
-          firstname: details.firstname,
+          ...details,
+          firstName: details.firstName,
           lastName: details.lastName,
+          id: details.id,
           companyId: details.companyId,
-          candidate: details,
-          raw: details,
+
           seoId: details.seoId,
           companyUserType: details.companyUserType,
-          links: details.links,
+          attachments: JSON.stringify(
+            details.attachments?.map((a: Attachment) => a.fileName) || []
+          ),
         };
 
         const events = await getCandidateEvents(Number(details.id));
@@ -101,11 +105,9 @@ export async function getCandidatesWithDetails(): Promise<
         };
 
         candidateDetails.push(candidateWithStringIds);
-        normalizedCandidates.push(candidateWithStringIds);
       }
     }
 
-    writeCandidatesToDb(normalizedCandidates);
     return candidateDetails;
   } catch (error) {
     logError("Error getting candidates with details ", error);
