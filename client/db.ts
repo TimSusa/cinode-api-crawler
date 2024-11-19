@@ -36,7 +36,7 @@ type NormalizedCinodeCandidate = Omit<
   };
 };
 
-function _readJsonFile<T>(path: string): T {
+export function _readJsonFile<T>(path: string): T {
   try {
     const content = Deno.readTextFileSync(path);
     const data = JSON.parse(content) as T;

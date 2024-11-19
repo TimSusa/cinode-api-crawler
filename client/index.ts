@@ -13,7 +13,7 @@ import type {
   UserResumeEntry,
   EmployeeDetail,
 } from "./types.ts";
-import { insertEmployee, readEmployeesFromDb } from "./db.ts";
+import { insertEmployee, readEmployeesFromDb, _readJsonFile } from "./db.ts";
 
 // Replace axios with native fetch
 type AxiosResponse<T> = {
@@ -412,10 +412,13 @@ export async function getStats(): Promise<{
   uniqueUserCount: number;
   totalResumes: number;
 }> {
-  const kv = await Deno.openKv("./db");
-  const employeeIds = await kv.get(["employeeIds"]);
-  if (!employeeIds.value) {
-    console.log("No employees found");
+  const data = _readJsonFile<{ employees: EmployeeDetail[] }>(
+    "./data/employees.json"
+  );
+  const employees = data?.employees || [];
+
+  if (!Array.isArray(employees)) {
+    console.error("Error: employees data is not an array or is undefined.");
     return { users: [], uniqueUserCount: 0, totalResumes: 0 };
   }
 
@@ -423,30 +426,25 @@ export async function getStats(): Promise<{
   let totalResumes = 0;
   const users: UserResumeEntry[] = [];
 
-  for (const userId of employeeIds.value as number[]) {
-    const employeeData = await kv.get(["employee", userId.toString()]);
-    const employee = employeeData.value as EmployeeDetail;
+  for (const employee of employees) {
+    const userResumes = allResumes.filter(
+      (resume) => resume.companyUserId === employee.userId
+    );
 
-    if (employee) {
-      const userResumes = allResumes.filter(
-        (resume) => resume.companyUserId === employee.userId
+    userResumes.forEach((resume) => {
+      const exists = users.some(
+        (u) => u.userId === employee.userId && u.resumeId === resume.id
       );
 
-      userResumes.forEach((resume) => {
-        const exists = users.some(
-          (u) => u.userId === employee.userId && u.resumeId === resume.id
-        );
-
-        if (!exists) {
-          users.push({
-            userId: employee.userId,
-            name: employee.name || `User ${userId}`,
-            resumeId: resume.id,
-          });
-          totalResumes++;
-        }
-      });
-    }
+      if (!exists) {
+        users.push({
+          userId: employee.userId,
+          name: employee.name || `User ${employee.userId}`,
+          resumeId: resume.id,
+        });
+        totalResumes++;
+      }
+    });
   }
 
   const uniqueUserCount = new Set(users.map((u) => u.userId)).size;

@@ -155,10 +155,13 @@ async function downloadPdf({
         error: `Failed to download PDF: ${response.statusText}`,
       };
     }
-
+    console.log(
+      "downloading pdf",
+      `./downloads/Resume-${username}-${resumeId}.pdf`
+    );
     const pdfData = await response.arrayBuffer();
     await Deno.writeFile(
-      `./Resume-${username}-${resumeId}.pdf`,
+      `./downloads/Resume-${username}-${resumeId}.pdf`,
       new Uint8Array(pdfData)
     );
     return { success: true };
