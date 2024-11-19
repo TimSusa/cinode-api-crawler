@@ -5,3 +5,6 @@ db-shm
 db-wal
 *.pdf
 cookie.txt
+.DS_Store
+*.xlsx
+data/*

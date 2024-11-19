@@ -79,7 +79,7 @@ function isTokenExpired(token: string = "") {
   return expired;
 }
 
-function logError(msg: string, err: any) {
+function logError(msg: string, err: unknown) {
   if (err instanceof Error) {
     logger.error(err.message);
     throw new Error(msg);
