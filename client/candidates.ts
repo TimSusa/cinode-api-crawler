@@ -2,7 +2,12 @@ import type {
   CinodeCandidate,
   CinodeCandidateDetails,
   CinodeEvent,
+  RecruitmentSource,
+  PipelineResponse,
+  Pipeline,
+  Stage,
 } from "./types.ts";
+import { State } from "./types.ts";
 import { Logger } from "./logger.ts";
 import { getConfig } from "./config.ts";
 import { getHeaders } from "./auth.ts";
@@ -53,7 +58,6 @@ export async function getCandidateDetails(
       throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    console.log("candidate details", data);
 
     return data;
   } catch (error) {
@@ -67,29 +71,35 @@ export async function getCandidatesWithDetails(): Promise<
 > {
   try {
     const candidates: CinodeCandidate[] = await getCompanyCandidates();
+    const recruitmentSources = await getRecruitmentSources();
     const candidateDetails = [];
     let index = 0;
 
     for (const candidate of candidates) {
       await delay(API_DELAY_MS);
       const details = await getCandidateDetails(Number(candidate.id));
+      console.log("candidate", details);
+      console.log("recruitmentSources", recruitmentSources);
 
       if (details) {
-        console.log(
-          "new candidate: ",
-          index++,
-          details.firstName,
-          details.lastName
+        const pipelineInfo = await getPipelineInfo(
+          Number(details.pipelineId) || 0,
+          Number(details.pipelineStageId) || 0
         );
-        const candidateDetail: CinodeCandidateDetails = {
+        const source = recruitmentSources.find(
+          (s) => s.id === details.recruitmentSourceId
+        );
+        const candidateDetail = {
           ...details,
           firstName: details.firstName,
           lastName: details.lastName,
           id: details.id,
           companyId: details.companyId,
-
           seoId: details.seoId,
           companyUserType: details.companyUserType,
+          pipeline: pipelineInfo,
+          source,
+          state: getStateKey(Number(details?.state || 0)),
         };
 
         const events = await getCandidateEvents(Number(details.id));
@@ -105,7 +115,7 @@ export async function getCandidatesWithDetails(): Promise<
           companyId: String(parsedCandidate.companyId),
           seoId: String(parsedCandidate.seoId),
         };
-
+        console.log("candidateDetails", index++);
         candidateDetails.push(candidateWithStringIds);
       }
     }
@@ -186,4 +196,77 @@ export async function getCandidateEvent(
     logError("Error getting candidate event ", error);
     return null;
   }
+}
+
+export async function getRecruitmentSources(): Promise<RecruitmentSource[]> {
+  try {
+    const config = await getConfig();
+    const headers = await getHeaders();
+    const endpoint = `${config.apiEndpoint}/companies/${config.companyId}/candidates/recruitment-sources`;
+
+    const response = await fetch(endpoint, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    logError("Error getting recruitment sources ", error);
+    return [];
+  }
+}
+
+export async function getPipelines(): Promise<PipelineResponse[]> {
+  try {
+    const config = await getConfig();
+    const headers = await getHeaders();
+    const endpoint = `${config.apiEndpoint}/companies/${config.companyId}/candidates/pipelines`;
+    const response = await fetch(endpoint, {
+      method: "GET",
+      headers,
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    logError("Error getting pipelines ", error);
+    return [];
+  }
+}
+
+// Helper function to get pipeline and stage names
+export async function getPipelineInfo(
+  pipelineId: number,
+  stageId: number
+): Promise<Pipeline> {
+  const pipelines: PipelineResponse[] = await getPipelines();
+  const pipeline = pipelines.find((p) => p.id === pipelineId);
+
+  if (!pipeline || !Array.isArray(pipeline.stages)) {
+    return {
+      title: "Unknown Pipeline",
+      description: "",
+      stage: undefined,
+    };
+  }
+
+  return {
+    title: pipeline.title,
+    description: pipeline.description || "",
+    stage: pipeline.stages.find((s: Stage) => s.id === stageId),
+  };
+}
+
+function getStateKey(stateValue: number): keyof typeof State {
+  const stateKey = Object.keys(State)[
+    Object.values(State).indexOf(stateValue)
+  ] as keyof typeof State;
+  return stateKey || "Open"; // fallback to 'Open' if not found
 }

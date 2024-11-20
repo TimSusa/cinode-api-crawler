@@ -78,6 +78,14 @@ export type Attachment = {
   fileName: string;
 };
 
+export enum State {
+  Open = 0,
+  Won = 10,
+  Paused = 20,
+  RejectedByCandidate = 30,
+  RejectedByUs = 40,
+}
+
 export type CinodeCandidateDetails = {
   id: string | number;
   firstName: string;
@@ -103,14 +111,16 @@ export type CinodeCandidateDetails = {
   linkedInUrl?: string;
   offeredSalary?: number;
   periodOfNoticeDays?: number;
+  pipeline?: Pipeline;
   pipelineId?: string | number;
   pipelineStageId?: string | number;
   rating?: number;
-  recruitmentManager?: string;
+  recruitmentManager?: RecruitmentManager;
   salaryRequirement?: number;
-  state?: string;
+  state?: keyof typeof State | State;
   title?: string;
   updatedDateTime?: string;
+  recruitmentSourceId?: number;
 };
 
 export type CinodeEvent = {
@@ -127,4 +137,34 @@ export type EmployeeDetail = {
   userId: number;
   name: string;
   employeeDetail: string;
+};
+
+export type RecruitmentManager = {
+  name: string;
+};
+
+export type RecruitmentSource = {
+  id: number;
+  name: string;
+};
+
+export type PipelineResponse = {
+  id: number;
+  title: string;
+  description: string;
+  stages: Stage[];
+};
+
+export type Pipeline = {
+  title: string;
+  description: string;
+  stage: Stage | undefined;
+};
+
+export type Stage = {
+  id: number;
+  title: string;
+  description: string;
+  order: number;
+  probability: number | null;
 };

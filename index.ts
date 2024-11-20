@@ -231,6 +231,8 @@ function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
     currencyId: candidate.currencyId,
     currentEmployer: candidate.currentEmployer,
     description: candidate.description,
+    pipeline: JSON.stringify(candidate.pipeline),
+    recruitmentManager: JSON.stringify(candidate.recruitmentManager),
     events:
       candidate.events?.map((event) => JSON.stringify(event)).join(" | ") || "",
     gender: candidate.gender,
@@ -244,7 +246,6 @@ function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
     pipelineId: candidate.pipelineId,
     pipelineStageId: candidate.pipelineStageId,
     rating: candidate.rating,
-    recruitmentManager: JSON.stringify(candidate.recruitmentManager),
     salaryRequirement: candidate.salaryRequirement,
     seoId: candidate.seoId,
     state: candidate.state,
