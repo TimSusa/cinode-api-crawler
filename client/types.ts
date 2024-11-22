@@ -111,8 +111,9 @@ export type CinodeCandidateDetails = {
   linkedInUrl?: string;
   offeredSalary?: number;
   periodOfNoticeDays?: number;
-  pipeline?: Pipeline;
-  pipelineId?: string | number;
+  pipeline: string;
+  stage: string;
+  pipelineId: string | number;
   pipelineStageId?: string | number;
   rating?: number;
   recruitmentManager?: RecruitmentManager;
@@ -140,7 +141,8 @@ export type EmployeeDetail = {
 };
 
 export type RecruitmentManager = {
-  name: string;
+  firstName: string;
+  lastName: string;
 };
 
 export type RecruitmentSource = {
@@ -158,7 +160,6 @@ export type PipelineResponse = {
 export type Pipeline = {
   title: string;
   description: string;
-  stage: Stage | undefined;
 };
 
 export type Stage = {

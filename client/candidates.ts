@@ -72,7 +72,7 @@ export async function getCandidatesWithDetails(): Promise<
   try {
     const candidates: CinodeCandidate[] = await getCompanyCandidates();
     const recruitmentSources = await getRecruitmentSources();
-    const candidateDetails = [];
+    const candidateDetails: CinodeCandidateDetails[] = [];
     let index = 0;
 
     for (const candidate of candidates) {
@@ -82,13 +82,11 @@ export async function getCandidatesWithDetails(): Promise<
       console.log("recruitmentSources", recruitmentSources);
 
       if (details) {
-        const pipelineInfo = await getPipelineInfo(
-          Number(details.pipelineId) || 0,
-          Number(details.pipelineStageId) || 0
+        const { title, description, stages } = await getPipelineInfo(
+          Number(details.pipelineId)
         );
-        const source = recruitmentSources.find(
-          (s) => s.id === details.recruitmentSourceId
-        );
+        const stage = getStageInfo(stages, Number(details.pipelineStageId));
+
         const candidateDetail = {
           ...details,
           firstName: details.firstName,
@@ -97,8 +95,9 @@ export async function getCandidatesWithDetails(): Promise<
           companyId: details.companyId,
           seoId: details.seoId,
           companyUserType: details.companyUserType,
-          pipeline: pipelineInfo,
-          source,
+          pipeline: `${title}: ${description}`,
+          stage: `${stage.title}: ${stage.description} `,
+          source: "FEAT WILL COME",
           state: getStateKey(Number(details?.state || 0)),
         };
 
@@ -241,26 +240,43 @@ export async function getPipelines(): Promise<PipelineResponse[]> {
   }
 }
 
-// Helper function to get pipeline and stage names
 export async function getPipelineInfo(
-  pipelineId: number,
-  stageId: number
-): Promise<Pipeline> {
+  pipelineId: number
+): Promise<Omit<Pipeline & { stages: Stage[] }, "stage">> {
   const pipelines: PipelineResponse[] = await getPipelines();
   const pipeline = pipelines.find((p) => p.id === pipelineId);
 
-  if (!pipeline || !Array.isArray(pipeline.stages)) {
+  if (!pipeline) {
     return {
       title: "Unknown Pipeline",
       description: "",
-      stage: undefined,
+      stages: [],
     };
   }
 
   return {
     title: pipeline.title,
     description: pipeline.description || "",
-    stage: pipeline.stages.find((s: Stage) => s.id === stageId),
+    stages: pipeline.stages,
+  };
+}
+
+export function getStageInfo(stages: Stage[], stageId: number): Stage {
+  if (!Array.isArray(stages)) {
+    return createDefaultStage();
+  }
+
+  const stage = stages.find((s: Stage) => s.id === stageId);
+  return stage || createDefaultStage();
+}
+
+function createDefaultStage(): Stage {
+  return {
+    id: -1,
+    title: "Unknown Stage",
+    description: "",
+    order: 0,
+    probability: 0,
   };
 }
 
