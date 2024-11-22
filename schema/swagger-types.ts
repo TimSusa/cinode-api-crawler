@@ -50,6 +50,12 @@ export enum WebhookEntityType {
   CompanyCustomerContact = 10,
 }
 
+export enum ActionType {
+  Created = 1,
+  Updated = 2,
+  Deleted = 3,
+}
+
 // Models
 export type TeamAddEditModel = {
   name?: string;
