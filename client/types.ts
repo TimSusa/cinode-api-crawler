@@ -126,7 +126,7 @@ export type CinodeCandidateDetails = {
 
 export type CinodeEvent = {
   type?: string;
-  createdDateTime?: string;
+  eventDate?: string;
   companyCandidateId: number;
   id: number;
   companyId: number;

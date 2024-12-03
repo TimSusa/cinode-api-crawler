@@ -137,7 +137,7 @@ export function readCandidatesFromDb(): CinodeCandidateDetails[] {
     const data = _readJsonFile<{ candidates: CinodeCandidateDetails[] }>(
       DB_PATH.candidates
     );
-    console.log("Reading candidates from database...", data.candidates);
+    console.log("Reading candidates from database...");
     return data.candidates || [];
   } catch (error) {
     console.error("Failed to read candidates:", error);
@@ -149,7 +149,7 @@ export function writeCandidatesToDb(
   candidates: CinodeCandidateDetails[]
 ): void {
   try {
-    console.log("writeCandidateToDb:", candidates);
+    console.log("writeCandidateToDb");
     Deno.writeTextFileSync(
       DB_PATH.candidates,
       JSON.stringify({ candidates }, null, 2)

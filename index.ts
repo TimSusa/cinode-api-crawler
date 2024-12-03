@@ -1,4 +1,4 @@
-import type { CinodeCandidateDetails } from "@/client/types.ts";
+import type { CinodeCandidateDetails, CinodeEvent } from "@/client/types.ts";
 import { exists } from "std/fs/exists.ts";
 import { parse } from "std/dotenv/mod.ts";
 import { Input } from "@cliffy/prompt/mod.ts";
@@ -217,6 +217,24 @@ function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
     return;
   }
 
+  function getEvents(events: CinodeEvent[]): string {
+    if (events.length === 0) {
+      return "No events";
+    }
+    return events
+      ?.map(({ title, description, eventDate }, index) => {
+        return `
+Event: ${index + 1} / ${events.length}
+Date: ${eventDate} 
+Title: ${title} 
+Description: ${description || ""}
+
+----------------------------------------
+`;
+      })
+      .join("");
+  }
+
   const formattedCandidates = candidates.map((candidate) => ({
     firstName: candidate.firstName,
     lastName: candidate.lastName,
@@ -231,8 +249,7 @@ function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
     pipeline: candidate.pipeline,
     stage: candidate.stage,
     recruitmentResponsible: `${candidate.recruitmentManager?.firstName} ${candidate.recruitmentManager?.lastName}`,
-    events:
-      candidate.events?.map((event) => JSON.stringify(event)).join(" | ") || "",
+    events: getEvents(candidate.events || []),
     gender: candidate.gender,
     id: candidate.id,
     internalId: candidate.internalId,
@@ -251,11 +268,11 @@ function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
   const workbook = XLSX.utils.book_new();
   const worksheet = XLSX.utils.json_to_sheet(formattedCandidates);
 
-  // Adjust column width for events
-  const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
-  const eventsColIndex = Object.keys(formattedCandidates[0]).indexOf("events");
-  worksheet["!cols"] = Array(range.e.c + 1).fill({ wch: 15 });
-  worksheet["!cols"][eventsColIndex] = { wch: 100 }; // wider column for events
+  // // Adjust column width for events
+  // const range = XLSX.utils.decode_range(worksheet["!ref"] || "A1");
+  // const eventsColIndex = Object.keys(formattedCandidates[0]).indexOf("events");
+  // worksheet["!cols"] = Array(range.e.c + 1).fill({ wch: 15 });
+  // worksheet["!cols"][eventsColIndex] = { wch: 100 }; // wider column for events
 
   XLSX.utils.book_append_sheet(workbook, worksheet, "Candidates");
   XLSX.writeFile(workbook, "candidates.xlsx");

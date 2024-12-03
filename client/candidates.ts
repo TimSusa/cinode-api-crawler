@@ -15,6 +15,12 @@ const logger = new Logger("Cinode Candidates");
 const API_DELAY_MS = parseInt(Deno.env.get("API_DELAY_MS") || "1000");
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+type CinodeCandidateEventDetails = CinodeEvent & {
+  title: string | undefined;
+  description: string | undefined;
+  eventDate?: string | undefined;
+};
+
 export async function getCompanyCandidates(): Promise<CinodeCandidate[]> {
   try {
     const config = await getConfig();
@@ -101,7 +107,9 @@ export async function getCandidatesWithDetails(): Promise<
           state: getStateKey(Number(details?.state || 0)),
         };
 
-        const events = await getCandidateEvents(Number(details.id));
+        const events: CinodeCandidateEventDetails[] = await getCandidateEvents(
+          Number(details.id)
+        );
 
         const parsedCandidate = {
           ...candidateDetail,
@@ -153,17 +161,9 @@ export async function getCandidateEvents(
     }
 
     const data = await response.json();
-    return data.map(
-      ({
-        companyCandidateId,
-        id,
-        companyId,
-        title,
-        description,
-      }: CinodeEvent) => {
-        return { companyCandidateId, id, companyId, title, description };
-      }
-    );
+    return data.map(({ title, description, eventDate }: CinodeEvent) => {
+      return { title, description, eventDate };
+    });
   } catch (error) {
     logError("Error getting candidate events ", error);
     return [];
