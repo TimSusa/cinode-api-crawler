@@ -222,7 +222,15 @@ function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
       return "No events";
     }
     return events
-      ?.map(({ title, description, eventDate }, index) => {
+      ?.sort(function (a, b) {
+        // Turn your strings into dates, and then subtract them
+        // to get a value that is either negative, positive, or zero.
+        const dateA = a.eventDate ? new Date(a.eventDate).getTime() : 0;
+        const dateB = b.eventDate ? new Date(b.eventDate).getTime() : 0;
+        return dateB - dateA;
+      })
+      .reverse()
+      .map(({ title, description, eventDate }, index) => {
         return `
 Event: ${index + 1} / ${events.length}
 Date: ${eventDate} 
