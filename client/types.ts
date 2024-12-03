@@ -125,13 +125,34 @@ export type CinodeCandidateDetails = {
 };
 
 export type CinodeEvent = {
+  id: string;
+  candidateId: number;
   type?: string;
-  eventDate?: string;
   companyCandidateId: number;
-  id: number;
+  companyId: number;
+  title: string | undefined;
+  description: string | undefined;
+  eventDate?: string | undefined;
+  createdBy: string | undefined;
+  updatedBy: string | undefined;
+  updated: string | undefined;
+  created: string | undefined;
+};
+
+export type CinodeSpecialEvent = {
+  companyCandidateId: number;
+  createdByCompanyUserId: number | null;
+  updatedByCompanyUserId: number | null;
+  created: string | null;
+  updated: string | null;
+  visibility: number;
+  comments: Array<unknown>;
+  type: number;
+  id: string;
   companyId: number;
   title: string;
   description: string;
+  eventDate: string;
 };
 
 export type EmployeeDetail = {

@@ -12,6 +12,6 @@
     "strict": true
   },
   "formatting": {
-    "date-time-format": "YYYY-MM-DDTHH:mm:ssZ"
+    "date-time-format": "YYYY-MM-DDTHH:mm"
   }
 }

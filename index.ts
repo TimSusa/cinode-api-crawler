@@ -13,6 +13,17 @@ import { getCandidatesWithDetails } from "@/client/candidates.ts";
 import { writeCandidatesToDb, readCandidatesFromDb } from "@/client/db.ts";
 import { downloadResumePdf } from "@/client/pdf.ts";
 import * as XLSX from "npm:xlsx";
+import * as dateFns from "npm:date-fns";
+
+type CinodeResponseEvent = {
+  eventDate: string;
+  createdBy: string;
+  updatedBy: string;
+  updated: string;
+  created: string;
+  title: string;
+  description: string;
+};
 
 async function main() {
   // Check for .env file
@@ -217,60 +228,44 @@ function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
     return;
   }
 
-  function getEvents(events: CinodeEvent[]): string {
-    if (events.length === 0) {
-      return "No events";
-    }
-    return events
-      ?.sort(function (a, b) {
-        // Turn your strings into dates, and then subtract them
-        // to get a value that is either negative, positive, or zero.
-        const dateA = a.eventDate ? new Date(a.eventDate).getTime() : 0;
-        const dateB = b.eventDate ? new Date(b.eventDate).getTime() : 0;
-        return dateB - dateA;
-      })
-      .reverse()
-      .map(({ title, description, eventDate }, index) => {
-        return `
-Event: ${index + 1} / ${events.length}
-Date: ${eventDate} 
-Title: ${title} 
-Description: ${description || ""}
-
-----------------------------------------
-`;
-      })
-      .join("");
-  }
-
   const formattedCandidates = candidates.map((candidate) => ({
     firstName: candidate.firstName,
     lastName: candidate.lastName,
     email: candidate.email,
     phone: candidate.phone,
     title: candidate.title,
-    availableFromDate: candidate.availableFromDate,
-    createdDateTime: candidate.createdDateTime,
+    availableFromDate:
+      candidate.availableFromDate &&
+      dateFns.formatISO9075(candidate.availableFromDate),
+    createdDateTime:
+      candidate.createdDateTime &&
+      dateFns.formatISO9075(candidate.createdDateTime),
     currencyId: candidate.currencyId,
     currentEmployer: candidate.currentEmployer,
     description: candidate.description,
     pipeline: candidate.pipeline,
     stage: candidate.stage,
     recruitmentResponsible: `${candidate.recruitmentManager?.firstName} ${candidate.recruitmentManager?.lastName}`,
-    events: getEvents(candidate.events || []),
+    events: getEvents(
+      candidate.events as CinodeEvent[] as CinodeResponseEvent[]
+    ),
     gender: candidate.gender,
     id: candidate.id,
     internalId: candidate.internalId,
     state: candidate.state,
     isMobile: candidate.isMobile,
-    lastTouchDateTime: candidate.lastTouchDateTime,
+    lastTouchDateTime:
+      candidate.lastTouchDateTime &&
+      dateFns.formatISO9075(candidate.lastTouchDateTime),
     linkedInUrl: candidate.linkedInUrl,
     offeredSalary: candidate.offeredSalary,
     periodOfNoticeDays: candidate.periodOfNoticeDays,
     rating: candidate.rating,
     salaryRequirement: candidate.salaryRequirement,
     seoId: candidate.seoId,
-    updatedDateTime: candidate.updatedDateTime,
+    updatedDateTime:
+      candidate.updatedDateTime &&
+      dateFns.formatISO9075(candidate.updatedDateTime),
   }));
 
   const workbook = XLSX.utils.book_new();
@@ -284,4 +279,45 @@ Description: ${description || ""}
 
   XLSX.utils.book_append_sheet(workbook, worksheet, "Candidates");
   XLSX.writeFile(workbook, "candidates.xlsx");
+}
+
+function getEvents(events: CinodeResponseEvent[]): string {
+  if (events.length === 0) {
+    return "No events";
+  }
+  return events
+    ?.sort(function (a, b) {
+      // Turn your strings into dates, and then subtract them
+      // to get a value that is either negative, positive, or zero.
+      return dateFns.compareDesc(a.eventDate, b.eventDate);
+    })
+    .reverse()
+    .map(
+      (
+        {
+          eventDate,
+          createdBy,
+          updatedBy,
+          updated,
+          created,
+          title,
+          description,
+        },
+        index
+      ) => {
+        return `
+Event: ${index + 1} / ${events.length}
+Date: ${dateFns.formatISO9075(eventDate)} 
+Created by: ${createdBy} at ${dateFns.formatISO9075(created)}
+${
+  updated ? `Updated by: ${updatedBy} at ${dateFns.formatISO9075(updated)}` : ""
+}
+Title: ${title} 
+Description: ${description || ""}
+
+----------------------------------------
+`;
+      }
+    )
+    .join("");
 }

@@ -6,19 +6,26 @@ import type {
   PipelineResponse,
   Pipeline,
   Stage,
+  CinodeSpecialEvent,
+  CinodeCompanyUser,
 } from "./types.ts";
 import { State } from "./types.ts";
 import { Logger } from "./logger.ts";
 import { getConfig } from "./config.ts";
 import { getHeaders } from "./auth.ts";
+import { getUsers } from "@/client/index.ts";
 const logger = new Logger("Cinode Candidates");
 const API_DELAY_MS = parseInt(Deno.env.get("API_DELAY_MS") || "1000");
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-type CinodeCandidateEventDetails = CinodeEvent & {
+type CinodeCandidateEventDetails = CinodeSpecialEvent & {
   title: string | undefined;
   description: string | undefined;
   eventDate?: string | undefined;
+  createdBy: string | undefined;
+  updatedBy: string | undefined;
+  updated: string | undefined;
+  created: string | undefined;
 };
 
 export async function getCompanyCandidates(): Promise<CinodeCandidate[]> {
@@ -144,12 +151,12 @@ function logError(msg: string, err: unknown) {
 }
 
 export async function getCandidateEvents(
-  candidateId: number
-): Promise<CinodeEvent[]> {
+  companyCandidateId: number
+): Promise<CinodeCandidateEventDetails[]> {
   try {
     const config = await getConfig();
     const headers = await getHeaders();
-    const endpoint = `${config.apiEndpoint}/companies/${config.companyId}/candidates/${candidateId}/events`;
+    const endpoint = `${config.apiEndpoint}/companies/${config.companyId}/candidates/${companyCandidateId}/events`;
 
     const response = await fetch(endpoint, {
       method: "GET",
@@ -161,9 +168,96 @@ export async function getCandidateEvents(
     }
 
     const data = await response.json();
-    return data.map(({ title, description, eventDate }: CinodeEvent) => {
-      return { title, description, eventDate };
-    });
+    const users = await getUsers();
+    const result = [];
+    for (const item of data) {
+      const {
+        title,
+        description,
+        eventDate,
+        id,
+        companyCandidateId,
+      }: CinodeEvent = item;
+      await delay(100); // Wait for 100ms before making the next request
+      const specialEvent: CinodeSpecialEvent = await getCandidateEvent(
+        String(companyCandidateId),
+        id
+      );
+      const {
+        createdByCompanyUserId,
+        updatedByCompanyUserId,
+        updated,
+        created,
+      } = specialEvent;
+
+      const { firstName, lastName } = (createdByCompanyUserId &&
+        findUserById(users, createdByCompanyUserId)) || {
+        firstName: "",
+        lastName: "",
+      };
+      const createdBy = `${firstName || ""} ${lastName || ""}`;
+      const updatedUser = (updatedByCompanyUserId &&
+        findUserById(users, updatedByCompanyUserId)) || {
+        firstName: "",
+        lastName: "",
+      };
+      const updatedBy = `${updatedUser.firstName || ""} ${
+        updatedUser.lastName || ""
+      }`;
+
+      result.push({
+        eventDate,
+        createdBy,
+        updatedBy,
+        updated,
+        created,
+        title,
+        description,
+      } as CinodeCandidateEventDetails);
+    }
+    return result;
+    // return data.map(
+    //   async ({
+    //     title,
+    //     description,
+    //     eventDate,
+    //     id,
+    //     companyCandidateId,
+    //   }: CinodeEvent) => {
+    //     const specialEvent: CinodeSpecialEvent = await getCandidateEvent(
+    //       String(companyCandidateId),
+    //       id
+    //     );
+    //     const {
+    //       createdByCompanyUserId,
+    //       updatedByCompanyUserId,
+    //       updated,
+    //       created,
+    //     } = specialEvent;
+
+    //     const { firstName, lastName } = findUserById(
+    //       users,
+    //       createdByCompanyUserId
+    //     ) || { firstName: "", lastName: "" };
+    //     const createdBy = `${firstName || ""} ${lastName || ""}`;
+    //     const updatedUser = findUserById(users, updatedByCompanyUserId) || {
+    //       firstName: "",
+    //       lastName: "",
+    //     };
+    //     const updatedBy = `${updatedUser.firstName || ""} ${
+    //       updatedUser.lastName || ""
+    //     }`;
+    //     return {
+    //       eventDate,
+    //       createdBy,
+    //       updatedBy,
+    //       updated,
+    //       created,
+    //       title,
+    //       description,
+    //     };
+    //   }
+    // );
   } catch (error) {
     logError("Error getting candidate events ", error);
     return [];
@@ -172,13 +266,13 @@ export async function getCandidateEvents(
 
 // Optional: Function to get a specific event if needed
 export async function getCandidateEvent(
-  candidateId: number,
-  eventId: number
-): Promise<CinodeEvent | null> {
+  companyCandidateId: string,
+  eventId: string
+): Promise<CinodeSpecialEvent> {
   try {
     const config = await getConfig();
     const headers = await getHeaders();
-    const endpoint = `${config.apiEndpoint}/companies/${config.companyId}/candidates/${candidateId}/events/${eventId}`;
+    const endpoint = `${config.apiEndpoint}/companies/${config.companyId}/candidates/${companyCandidateId}/events/${eventId}`;
 
     const response = await fetch(endpoint, {
       method: "GET",
@@ -193,7 +287,7 @@ export async function getCandidateEvent(
     return data;
   } catch (error) {
     logError("Error getting candidate event ", error);
-    return null;
+    return {} as CinodeSpecialEvent;
   }
 }
 
@@ -285,4 +379,17 @@ function getStateKey(stateValue: number): keyof typeof State {
     Object.values(State).indexOf(stateValue)
   ] as keyof typeof State;
   return stateKey || "Open"; // fallback to 'Open' if not found
+}
+
+function findUserById(
+  users: CinodeCompanyUser[],
+  id: number
+): CinodeCompanyUser {
+  return (
+    users.find((user) => user.companyUserId === id) || {
+      companyUserId: -1,
+      firstName: "",
+      lastName: "",
+    }
+  );
 }
