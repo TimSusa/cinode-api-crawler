@@ -18,7 +18,7 @@ const logger = new Logger("Cinode Candidates");
 const API_DELAY_MS = parseInt(Deno.env.get("API_DELAY_MS") || "1000");
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-type CinodeCandidateEventDetails = CinodeSpecialEvent & {
+type CinodeCandidateEventDetails = Omit<CinodeSpecialEvent, "type"> & {
   title: string | undefined;
   description: string | undefined;
   eventDate?: string | undefined;
@@ -26,6 +26,7 @@ type CinodeCandidateEventDetails = CinodeSpecialEvent & {
   updatedBy: string | undefined;
   updated: string | undefined;
   created: string | undefined;
+  type: string;
 };
 
 export async function getCompanyCandidates(): Promise<CinodeCandidate[]> {
@@ -91,8 +92,13 @@ export async function getCandidatesWithDetails(): Promise<
     for (const candidate of candidates) {
       await delay(API_DELAY_MS);
       const details = await getCandidateDetails(Number(candidate.id));
+
       console.log("candidate", details);
-      console.log("recruitmentSources", recruitmentSources);
+      const recruitmentSourceId = details?.recruitmentSourceId;
+      const recruitmentSource = recruitmentSources.find(
+        (source) => source.id === recruitmentSourceId
+      );
+      console.log("recruitmentSources", recruitmentSource);
 
       if (details) {
         const { title, description, stages } = await getPipelineInfo(
@@ -110,7 +116,9 @@ export async function getCandidatesWithDetails(): Promise<
           companyUserType: details.companyUserType,
           pipeline: `${title}: ${description}`,
           stage: `${stage.title}: ${stage.description} `,
-          source: "FEAT WILL COME",
+          recruitmentSource: recruitmentSource
+            ? recruitmentSource.name
+            : undefined,
           state: getStateKey(Number(details?.state || 0)),
         };
 

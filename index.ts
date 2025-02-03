@@ -9,7 +9,10 @@ import {
   readEmployeeData,
   getStats,
 } from "@/client/index.ts";
-import { getCandidatesWithDetails } from "@/client/candidates.ts";
+import {
+  getCandidatesWithDetails,
+  getRecruitmentSources,
+} from "@/client/candidates.ts";
 import { writeCandidatesToDb, readCandidatesFromDb } from "@/client/db.ts";
 import { downloadResumePdf } from "@/client/pdf.ts";
 import * as XLSX from "npm:xlsx";
@@ -246,6 +249,7 @@ function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
     pipeline: candidate.pipeline,
     stage: candidate.stage,
     recruitmentResponsible: `${candidate.recruitmentManager?.firstName} ${candidate.recruitmentManager?.lastName}`,
+    recruitmentSource: candidate.recruitmentSource,
     events: getEvents(
       candidate.events as CinodeEvent[] as CinodeResponseEvent[]
     ),
@@ -254,18 +258,18 @@ function exportCandidatesToExcel(candidates: CinodeCandidateDetails[]) {
     internalId: candidate.internalId,
     state: candidate.state,
     isMobile: candidate.isMobile,
-    lastTouchDateTime:
-      candidate.lastTouchDateTime &&
-      dateFns.formatISO9075(candidate.lastTouchDateTime),
+    lastTouchDateTime: candidate.lastTouchDateTime
+      ? new Date(candidate.lastTouchDateTime).toISOString().split("T")[0]
+      : undefined,
     linkedInUrl: candidate.linkedInUrl,
     offeredSalary: candidate.offeredSalary,
     periodOfNoticeDays: candidate.periodOfNoticeDays,
     rating: candidate.rating,
     salaryRequirement: candidate.salaryRequirement,
     seoId: candidate.seoId,
-    updatedDateTime:
-      candidate.updatedDateTime &&
-      dateFns.formatISO9075(candidate.updatedDateTime),
+    updatedDateTime: candidate.updatedDateTime
+      ? new Date(candidate.updatedDateTime).toISOString().split("T")[0]
+      : undefined,
   }));
 
   const workbook = XLSX.utils.book_new();
